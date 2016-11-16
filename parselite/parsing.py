@@ -1,6 +1,6 @@
 from __future__ import print_function, division
-import messages.journal_messages as m_journal
-import gameversion
+from .messages import journal_messages as m_journal
+from . import gameversion
 
 class MessageParser(object):
   def __init__(self, version_info):

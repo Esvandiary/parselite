@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import threading
+from . import parsing
 
 log = logging.getLogger("journal")
 
@@ -58,9 +59,13 @@ class JournalFile(io.IOBase):
       if data:
         try:
           jdata = json.loads(data)
-          obj = self._parser.parse(jdata)
-          if self._keep_raw_data:
-            obj.raw_data = data
+          if self._parser:
+            obj = self._parser.parse(jdata)
+            if self._keep_raw_data:
+              obj.raw_data = data
+            return obj
+          else:
+            return jdata
         except Exception as ex:
           raise
       else:

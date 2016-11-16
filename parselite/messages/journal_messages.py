@@ -1,7 +1,7 @@
 from __future__ import print_function, division
 import distutils.version as dver
 import sys
-import message
+from . import message
 from ..thirdparty import iso8601
 from .. import gameversion
 
@@ -38,8 +38,8 @@ class JournalMessage(message.Message):
 
 
 # Now we've defined JournalMessage, import the individual message classes
-import journal_v2200
-import journal_v2202
+from . import journal_v2200
+from . import journal_v2202
 
 
 def create_message(versions, data):
