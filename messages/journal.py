@@ -1,7 +1,9 @@
 from __future__ import print_function, division
 import distutils.version as dver
+import thirdparty.iso8601 as iso8601
 import journal_v2200
 import journal_v2202
+import message
 
 v2200 = "2.2.00"
 v2202 = "2.2.02"
@@ -131,4 +133,13 @@ messages = {
   "WingJoin": {v2200: journal_v2200.WingJoinMessage},
   "WingLeave": {v2200: journal_v2200.WingLeaveMessage},
 }
+
+class JournalMessage(message.Message):
+  def __init__(self, version, data, raw_data = None):
+    if 'timestamp' not in data or 'event' not in data:
+      raise ValueError("data provided to journal message does not provide event and/or timestamp")
+    time = iso8601.parse_date(data['timestamp'])
+    source = "journal_{}".format(version)
+    super(JournalMessage, self).__init__(data, raw_data=raw_data, source=source, time=time)
+    self.event = str(data['event'])
 
