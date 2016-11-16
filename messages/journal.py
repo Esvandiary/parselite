@@ -8,12 +8,39 @@ import message
 v2200 = "2.2.00"
 v2202 = "2.2.02"
 
+
 def get_valid_versions(version_str):
   verobj = dver.StrictVersion(version_str)
   if verobj >= dver.StrictVersion(v2202):
     return [v2202, v2200]
   else:
     return [v2200]
+
+
+def create_message(versions, data, raw_data = None):
+  if 'event' not in data:
+    raise ValueError("invalid journal message data provided, no event key")
+  # Try to get a message, fall back to a generic JournalMessage object
+  eventdata = messages.get(data['event'], {v2200: JournalMessage})
+  for v in versions:
+    if v in eventdata:
+      return eventdata[v](data, raw_data=raw_data, version=v)
+  raise ValueError("no valid versions detected for specified message")
+
+
+class JournalMessage(message.Message):
+  def __init__(self, data, raw_data = None, version = v2200):
+    if 'timestamp' not in data or 'event' not in data:
+      raise ValueError("data provided to journal message does not provide event and/or timestamp")
+    time = iso8601.parse_date(data['timestamp'])
+    source = "journal_{}".format(version)
+    super(JournalMessage, self).__init__(data, raw_data=raw_data, source=source, time=time)
+    self.version = version
+
+  @property
+  def event(self):
+    return str(self.data['event'])
+
 
 messages = {
   "ApproachSettlement": {v2200: journal_v2200.ApproachSettlementMessage},
@@ -133,13 +160,4 @@ messages = {
   "WingJoin": {v2200: journal_v2200.WingJoinMessage},
   "WingLeave": {v2200: journal_v2200.WingLeaveMessage},
 }
-
-class JournalMessage(message.Message):
-  def __init__(self, version, data, raw_data = None):
-    if 'timestamp' not in data or 'event' not in data:
-      raise ValueError("data provided to journal message does not provide event and/or timestamp")
-    time = iso8601.parse_date(data['timestamp'])
-    source = "journal_{}".format(version)
-    super(JournalMessage, self).__init__(data, raw_data=raw_data, source=source, time=time)
-    self.event = str(data['event'])
 
