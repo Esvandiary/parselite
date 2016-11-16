@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import messages.journal as m_journal
+import messages.journal_messages as m_journal
 
 class MessageParser(object):
   def __init__(self, version_info):

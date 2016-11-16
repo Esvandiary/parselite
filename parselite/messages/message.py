@@ -2,7 +2,7 @@ from __future__ import print_function, division
 import datetime
 
 class Message(object):
-  def __init__(self, data, time = datetime.now(), source = None, raw_data = None):
+  def __init__(self, data, time = datetime.datetime.now(), source = None, raw_data = None):
     self._source = source
     self._data = data
     self._time = time

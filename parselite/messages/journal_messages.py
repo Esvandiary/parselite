@@ -1,37 +1,13 @@
 from __future__ import print_function, division
 import distutils.version as dver
+import os
 import sys
-import journal_v2200
-import journal_v2202
 import message
-
-sys.path.append('../thirdparty')
-import iso8601
-del sys.path[-1]
+from ..thirdparty import iso8601
 
 
 v2200 = "2.2.00"
 v2202 = "2.2.02"
-
-
-def get_valid_versions(version_str):
-  verobj = dver.StrictVersion(version_str)
-  if verobj >= dver.StrictVersion(v2202):
-    return [v2202, v2200]
-  else:
-    return [v2200]
-
-
-def create_message(versions, data):
-  if 'event' not in data:
-    raise ValueError("invalid journal message data provided, no event key")
-  # Try to get a message, fall back to a generic JournalMessage object
-  eventdata = journal_messages.get(data['event'], {v2200: JournalMessage})
-  for v in versions:
-    if v in eventdata:
-      return eventdata[v](data, version=v)
-  raise ValueError("no valid versions detected for specified message")
-
 
 class JournalMessage(message.Message):
   def __init__(self, data, version = v2200):
@@ -47,7 +23,31 @@ class JournalMessage(message.Message):
     return str(self.data['event'])
 
 
-journal_messages = {
+# Now we've defined JournalMessage, import the individual message classes
+import journal_v2200
+import journal_v2202
+
+
+def get_valid_versions(version_str):
+  verobj = dver.StrictVersion(version_str)
+  if verobj >= dver.StrictVersion(v2202):
+    return [v2202, v2200]
+  else:
+    return [v2200]
+
+
+def create_message(versions, data):
+  if 'event' not in data:
+    raise ValueError("invalid journal message data provided, no event key")
+  # Try to get a message, fall back to a generic JournalMessage object
+  eventdata = messages.get(data['event'], {v2200: JournalMessage})
+  for v in versions:
+    if v in eventdata:
+      return eventdata[v](data, version=v)
+  raise ValueError("no valid versions detected for specified message")
+
+
+messages = {
   "ApproachSettlement": {v2200: journal_v2200.ApproachSettlementMessage},
   "Bounty": {v2200: journal_v2200.BountyMessage},
   "BuyAmmo": {v2200: journal_v2200.BuyAmmoMessage},
