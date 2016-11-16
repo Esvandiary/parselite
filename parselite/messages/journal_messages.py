@@ -1,13 +1,27 @@
 from __future__ import print_function, division
 import distutils.version as dver
-import os
 import sys
 import message
 from ..thirdparty import iso8601
+from .. import gameversion
 
 
+# Versions known to contain journal additions/changes
 v2200 = "2.2.00"
 v2202 = "2.2.02"
+
+
+def get_valid_versions(version):
+  # If we have a simple game version that probably means an unknown build
+  # Assume it's a new one we don't know about
+  if gameversion.is_simple_version(version):
+    version = "{}.{}".format(version, sys.maxsize)
+  verobj = dver.StrictVersion(version)
+  if verobj >= dver.StrictVersion(v2202):
+    return [v2202, v2200]
+  else:
+    return [v2200]
+
 
 class JournalMessage(message.Message):
   def __init__(self, data, version = v2200):
@@ -26,14 +40,6 @@ class JournalMessage(message.Message):
 # Now we've defined JournalMessage, import the individual message classes
 import journal_v2200
 import journal_v2202
-
-
-def get_valid_versions(version):
-  verobj = dver.StrictVersion(version)
-  if verobj >= dver.StrictVersion(v2202):
-    return [v2202, v2200]
-  else:
-    return [v2200]
 
 
 def create_message(versions, data):

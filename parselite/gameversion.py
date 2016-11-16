@@ -3,6 +3,7 @@ import re
 
 
 _re_buildstr = re.compile("^\\s*r(?P<client>\\d+)/r(?P<server>\\d+)\\s*$")
+_re_simplever = re.compile("^(?P<major>\\d+)\\.(?P<minor>\\d+)$")
 
 
 _build_mapping = {
@@ -22,3 +23,6 @@ def get_version_string(gameversion, buildstr):
       return _build_mapping[gameversion][cbuild]
   return gameversion
 
+
+def is_simple_version(verstr):
+  return (_re_simplever.match(verstr) is not None)
