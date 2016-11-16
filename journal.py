@@ -19,7 +19,7 @@ class JournalFile(io.IOBase):
     header = self.readline()
     if header:
       # Read header data and act on it
-      self._parser = parsing.MessageParser("journal", {'version': header['gameversion'], 'build': header['build']})
+      self._parser = parsing.create_parser("journal", {'version': header['gameversion'], 'build': header['build']})
       # Reset file to start
       self._fd.seek(0)
     else:
@@ -57,8 +57,10 @@ class JournalFile(io.IOBase):
       data = self._fd.readline(size)
       if data:
         try:
-          obj = json.loads(data)
-          return MAGICAL_PARSING(obj, self._keep_raw_data)
+          jdata = json.loads(data)
+          obj = self._parser.parse(jdata)
+          if self._keep_raw_data:
+            obj.raw_data = data
         except Exception as ex:
           raise
       else:
