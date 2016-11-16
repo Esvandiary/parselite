@@ -11,10 +11,19 @@ class JournalFile(io.IOBase):
   def __init__(self, filename, keep_raw = False):
     self._filename = filename
     self._fd = None
+    self._parser = None
     self._keep_raw_data = keep_raw
 
   def open(self):
-    self._fd = open(self._filename, 'r', 1)
+    self._fd = open(self._filename, 'r', 1)  # 0 = unbuffered, 1 = line-buffered
+    header = self.readline()
+    if header:
+      # Read header data and act on it
+      self._parser = parsing.MessageParser("journal", {'version': header['gameversion'], 'build': header['build']})
+      # Reset file to start
+      self._fd.seek(0)
+    else:
+      raise InvalidDataError("could not read journal file header", None)
 
   def close(self):
     if not self.closed:
@@ -41,7 +50,7 @@ class JournalFile(io.IOBase):
     return True
 
   def readall(self):
-    return self.readlines()
+    return list(self.readlines())
 
   def readline(self, size = -1):
     if not self.closed:
@@ -121,3 +130,8 @@ class JournalWatcher(object):
   def stop(self):
     raise NotImplementedError("stop")
 
+
+class InvalidDataError(Exception):
+  def __init__(self, message, data_line = None):
+    self.message = message
+    self.data = data_line
