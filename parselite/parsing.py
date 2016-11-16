@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import messages.journal_messages as m_journal
+import gameversion
 
 class MessageParser(object):
   def __init__(self, version_info):
@@ -12,7 +13,8 @@ class MessageParser(object):
 class JournalParser(MessageParser):
   def __init__(self, version_info):
     super(JournalParser, self).__init__(version_info)
-    self._valid_versions = m_journal.get_valid_versions(version_info['version'])
+    verstr = gameversion.get_version_string(version_info['version'], version_info['build'])
+    self._valid_versions = m_journal.get_valid_versions(verstr)
 
   def parse(self, data):
     return m_journal.create_message(self._valid_versions, data)

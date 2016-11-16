@@ -28,8 +28,8 @@ import journal_v2200
 import journal_v2202
 
 
-def get_valid_versions(version_str):
-  verobj = dver.StrictVersion(version_str)
+def get_valid_versions(version):
+  verobj = dver.StrictVersion(version)
   if verobj >= dver.StrictVersion(v2202):
     return [v2202, v2200]
   else:
