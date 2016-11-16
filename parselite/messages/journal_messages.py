@@ -35,6 +35,9 @@ class JournalMessage(message.Message):
   @property
   def event(self):
     return str(self.data['event'])
+  
+  def __str__(self):
+    return "JournalMessage[{0}] at {1}".format(self.event, self.time)
 
 
 # Now we've defined JournalMessage, import the individual message classes
