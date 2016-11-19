@@ -2,10 +2,9 @@ from __future__ import print_function, division
 import io
 import json
 import logging
-import os
-import threading
-import time
+
 from . import parsing
+from . import watcher
 
 log = logging.getLogger("journal")
 
@@ -92,14 +91,14 @@ class JournalFile(io.IOBase):
     else:
       raise IOError("tried to call readlines on a closed journal file")
 
-  def seek(self):
-    raise io.UnsupportedOperation("journal file does not support seeking")
+  def seek(self, loc, rel = 0):
+    return self._fd.seek(loc, rel)
 
   def seekable(self):
-    return False
+    return True
 
   def tell(self):
-    raise io.UnsupportedOperation("journal file does not support telling")
+    return self._fd.tell()
 
   def truncate(self, size = None):
     raise io.UnsupportedOperation("journal file does not support truncating")
@@ -120,63 +119,28 @@ class JournalFile(io.IOBase):
   __iter__ = readlines
 
 
-class JournalFileWatcher(object):
+class JournalFileWatcher(watcher.LineBasedFileWatcher):
   def __init__(self, source, from_start = True):
-    self._source = source
-    self._from_start = from_start
-    self._thread = None
-    self._wait_condition = None
-    self._callbacks = []
-    self._running = False
-    self._poll_frequency = 0.1  # seconds
+    if not isinstance(source, JournalFile):
+      source = JournalFile(source)
+      self._control_source = True
+    super(JournalFileWatcher, self).__init__(source, from_start, thread_name_prefix='JournalWatcher')
 
-  def add_callback(self, message_types, fn):
-    self._callbacks.append((message_types, fn))
-
-  def remove_callback(self, fn):
-    self._callbacks = [(k, v) for (k, v) in self._callbacks if v != fn]
+  def _is_callback_match(self, types, message):
+    return (types is None or message.event in types)
 
   def start(self):
-    self._thread = threading.Thread(self._run, name='JournalWatcher-{}'.format(self._source.fileno()))
-    self._wait_condition = threading.Condition()
-    self._thread.start()
+    if self._control_source:
+      self._source.open()
+    super(JournalFileWatcher, self).start()
 
   def stop(self):
-    if self._running:
-      self._running = False
-      if self._thread.is_alive():
-        self._wait_condition.acquire()
-        self._wait_condition.notify_all()
-        self._wait_condition.release()
-        self._thread.join()
-      return True
-    else:
-      return False
-
-  def _run(self):
-    cur_size = 0 if self._from_start else self._get_current_size()
-    while self._running:
-      iter_start_time = time.clock()
-      new_size = self._get_current_size()
-      if new_size > cur_size:
-        for new_msg in self._source.readlines():
-          self._execute_callbacks(new_msg)
-      cur_size = new_size
-      self._wait_condition.acquire()
-      self._wait_condition.wait(self._poll_frequency - (time.clock() - iter_start_time))
-      self._wait_condition.release()
-
-  def _execute_callbacks(self, message):
-    for (types, fn) in self._callbacks:
-      if any([isinstance(message, t) for t in types]):
-        fn(message)
-
-  def _get_current_size(self):
-    return os.fstat(self._source.fileno()).st_size
+    super(JournalFileWatcher, self).stop()
+    if self._control_source:
+      self._source.close()
 
 
 class InvalidDataError(Exception):
   def __init__(self, message, data_line = None):
     self.message = message
     self.data = data_line
-
