@@ -4,7 +4,7 @@ import json
 import logging
 
 from . import parsing
-from . import watcher
+from . import filewatcher
 
 log = logging.getLogger("journal")
 
@@ -119,7 +119,7 @@ class JournalFile(io.IOBase):
   __iter__ = readlines
 
 
-class JournalFileWatcher(watcher.LineBasedFileWatcher):
+class JournalFileWatcher(filewatcher.LineBasedFileWatcher):
   def __init__(self, source, from_start = True):
     if not isinstance(source, JournalFile):
       source = JournalFile(source)
