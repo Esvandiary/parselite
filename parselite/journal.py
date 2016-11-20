@@ -30,6 +30,7 @@ class JournalFile(io.IOBase):
   def close(self):
     if not self.closed:
       self._fd.close()
+    self._parser = None
 
   @property
   def closed(self):
@@ -120,11 +121,11 @@ class JournalFile(io.IOBase):
 
 
 class JournalFileWatcher(filewatcher.LineBasedFileWatcher):
-  def __init__(self, source, from_start = True):
+  def __init__(self, source, from_start = True, poll_interval = filewatcher.default_poll_interval):
     if not isinstance(source, JournalFile):
       source = JournalFile(source)
       self._control_source = True
-    super(JournalFileWatcher, self).__init__(source, from_start, thread_name_prefix='JournalWatcher')
+    super(JournalFileWatcher, self).__init__(source, from_start, thread_name_prefix='JournalWatcher', poll_interval=poll_interval)
 
   def _is_callback_match(self, types, message):
     return (types is None or message.event in types)
