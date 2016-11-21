@@ -2,11 +2,14 @@ from __future__ import print_function, division
 import io
 import json
 import logging
+import os
 
 from . import parsing
 from . import filewatcher
 
 log = logging.getLogger("journal")
+
+default_journal_directory = os.path.join(os.path.expanduser('~'), "Saved Games", "Frontier Developments", "Elite Dangerous")
 
 
 class JournalFile(io.IOBase):
