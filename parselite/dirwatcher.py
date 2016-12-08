@@ -26,4 +26,15 @@ class DirectoryWatcher(watchdog.events.RegexMatchingEventHandler):
   def remove_callback(fn):
     self._callbacks = [(t, f, q) for (t, f, q) in self._callbacks if f != fn]
 
+  def on_created(self, event):
+    # TODO: update current file
+    pass
+
+  def on_modified(self, event):
+    # TODO: pass data onto FileWatcher, if this method is fast and reliable enough?
+    pass
+
+  def on_deleted(self, event):
+    # TODO: check it's not our current active file, and ... do something ... if it is
+    pass
 
