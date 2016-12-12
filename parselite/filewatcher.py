@@ -49,10 +49,32 @@ class FileWatcher(object):
         qdata.condition.acquire()
         qdata.condition.notify_all()
         qdata.condition.release()
+        log.debug("Waiting for unused queue '{}' to join...".format(qname))
         qdata.thread.join()
         log.debug("Stopped unused queue '{}'".format(qname))
         qdata.thread = None
       del self._queues[qname]
+
+  def read_all(self):
+    if not self._running:
+      self._running = True
+      # Store current position for later
+      old_pos = self._source.tell()
+      self._source.seek(0)
+      # Clear queues to force everything to happen synchronously
+      old_queues = self._queues
+      self._queues = {}
+      new_size = self._get_current_size()
+      for new_msg in self._get_new_messages(new_size, 0):
+        self._execute_callbacks(new_msg)
+      # Put source back where it was
+      self._source.seek(old_pos)
+      # Put queues back
+      self._queues = old_queues
+      self._running = False
+      return True
+    else:
+      return False
 
   def start(self):
     if not self._running:
@@ -147,7 +169,7 @@ class FileWatcher(object):
   def _execute_callbacks(self, message):
     for (types, fn, queue) in self._callbacks:
       if self._is_callback_match(types, message):
-        if queue is None:
+        if queue is None or queue not in self._queues:
           fn(message)
         else:
           qdata = self._queues[queue]
